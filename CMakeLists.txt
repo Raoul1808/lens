@@ -4,6 +4,7 @@ project(lens)
 set(CMAKE_CXX_STANDARD 14)
 
 add_subdirectory(external/SDL)
+add_subdirectory(external/glad)
 
 add_executable(lens main.cpp)
-target_link_libraries(lens PRIVATE SDL2)
+target_link_libraries(lens PRIVATE SDL2 ${CMAKE_DL_LIBS} Glad)
