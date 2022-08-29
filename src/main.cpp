@@ -4,7 +4,7 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
 
-int main()
+int main(int argc, char** argv)
 {
     SDL_Init(SDL_INIT_VIDEO);
 

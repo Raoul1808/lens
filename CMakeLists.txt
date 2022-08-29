@@ -11,4 +11,11 @@ file(GLOB_RECURSE SOURCES src/*.cpp)
 
 add_executable(lens ${SOURCES})
 target_include_directories(lens PRIVATE src/)
-target_link_libraries(lens PRIVATE SDL2 ${CMAKE_DL_LIBS} Glad ImGui)
+
+if (${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    set(SDL2_LIBS SDL2main SDL2)
+else()
+    set(SDL2_LIBS SDL2)
+endif()
+
+target_link_libraries(lens PRIVATE ${SDL2_LIBS} ${CMAKE_DL_LIBS} Glad ImGui)
