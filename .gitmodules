@@ -1,3 +1,7 @@
 [submodule "external/SDL"]
 	path = external/SDL
 	url = https://github.com/libsdl-org/SDL.git
+[submodule "external/imgui-cmake/imgui"]
+	path = external/imgui-cmake/imgui
+	url = https://github.com/ocornut/imgui.git
+	branch = docking

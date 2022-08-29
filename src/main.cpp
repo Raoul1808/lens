@@ -1,5 +1,8 @@
 #include "glad/glad.h"
 #include "SDL.h"
+#include "imgui.h"
+#include "imgui/imgui_impl_sdl.h"
+#include "imgui/imgui_impl_opengl3.h"
 
 int main()
 {
@@ -74,7 +77,11 @@ void main()
     glDeleteShader(fs);
     glUseProgram(program);
 
-
+    IMGUI_CHECKVERSION();
+    ImGui::CreateContext();
+    ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+    ImGui_ImplSDL2_InitForOpenGL(window, glContext);
+    ImGui_ImplOpenGL3_Init("#version 460 core");
 
     bool running = true;
     SDL_Event ev;
@@ -82,6 +89,7 @@ void main()
     {
         while (SDL_PollEvent(&ev))
         {
+            ImGui_ImplSDL2_ProcessEvent(&ev);
             if (ev.type == SDL_QUIT)
             {
                 running = false;
@@ -89,14 +97,25 @@ void main()
             }
         }
 
+        ImGui_ImplOpenGL3_NewFrame();
+        ImGui_ImplSDL2_NewFrame();
+        ImGui::NewFrame();
+        ImGui::ShowDemoWindow();
+        ImGui::Render();
+
         glClearColor(0.390625f, 0.58203125f, 0.92578125f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         glDrawArrays(GL_TRIANGLES, 0, 3);
 
+        ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
         SDL_GL_SwapWindow(window);
     }
 
+    ImGui_ImplOpenGL3_Shutdown();
+    ImGui_ImplSDL2_Shutdown();
+    ImGui::DestroyContext();
     glDeleteProgram(program);
     glDeleteBuffers(1, &buffer);
     glDeleteVertexArrays(1, &vao);
