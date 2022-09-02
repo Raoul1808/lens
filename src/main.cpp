@@ -29,16 +29,27 @@ int main(int argc, char** argv)
 
     float vertices[] = {
             -0.5f, -0.5f,
-            0.0f, 0.5f,
+            -0.5f, 0.5f,
+            0.5f, 0.5f,
             0.5f, -0.5f,
     };
 
+    unsigned int elements[] = {
+            0, 1, 2,
+            2, 3, 0,
+    };
+
     unsigned int buffer;
+    unsigned int elementBuffer;
     glGenBuffers(1, &buffer);
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
     glEnableVertexAttribArray(0);
     glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
+
+    glGenBuffers(1, &elementBuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
     const char* vertexShader = R"glsl(
 #version 460 core
@@ -106,7 +117,7 @@ void main()
         glClearColor(0.390625f, 0.58203125f, 0.92578125f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glDrawArrays(GL_TRIANGLES, 0, 3);
+        glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
