@@ -3,6 +3,8 @@
 #include "imgui.h"
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
+#include "texture.hpp"
+#include "util/texture_loader.hpp"
 
 int main(int argc, char** argv)
 {
@@ -28,10 +30,10 @@ int main(int argc, char** argv)
 
 
     float vertices[] = {
-            -0.5f, -0.5f,
-            -0.5f, 0.5f,
-            0.5f, 0.5f,
-            0.5f, -0.5f,
+            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+            0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+            0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
 
     unsigned int elements[] = {
@@ -40,14 +42,14 @@ int main(int argc, char** argv)
     };
 
     unsigned int buffer;
-    unsigned int elementBuffer;
     glGenBuffers(1, &buffer);
+
+    unsigned int elementBuffer;
+    glGenBuffers(1, &elementBuffer);
+
     glBindBuffer(GL_ARRAY_BUFFER, buffer);
     glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-    glEnableVertexAttribArray(0);
-    glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 2 * sizeof(float), 0);
 
-    glGenBuffers(1, &elementBuffer);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(elements), elements, GL_STATIC_DRAW);
 
@@ -55,9 +57,16 @@ int main(int argc, char** argv)
 #version 460 core
 
 in vec2 position;
+in vec3 color;
+in vec2 texCoord;
+
+out vec3 a_Color;
+out vec2 a_TexCoord;
 
 void main()
 {
+    a_Color = color;
+    a_TexCoord = texCoord;
     gl_Position = vec4(position, 0.0, 1.0);
 }
     )glsl";
@@ -65,11 +74,16 @@ void main()
     const char* fragmentShader = R"glsl(
 #version 460 core
 
+in vec3 a_Color;
+in vec2 a_TexCoord;
+
 out vec4 color;
+
+uniform sampler2D tex;
 
 void main()
 {
-    color = vec4(1.0, 0.0, 0.0, 1.0);
+    color = texture(tex, a_TexCoord) * vec4(a_Color, 1.0);
 }
     )glsl";
 
@@ -87,6 +101,33 @@ void main()
     glDeleteShader(vs);
     glDeleteShader(fs);
     glUseProgram(program);
+
+    int posAttrib = glGetAttribLocation(program, "position");
+    glEnableVertexAttribArray(posAttrib);
+    glVertexAttribPointer(posAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), 0);
+
+    int colAttrib = glGetAttribLocation(program, "color");
+    glEnableVertexAttribArray(colAttrib);
+    glVertexAttribPointer(colAttrib, 3, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(2 * sizeof(float)));
+
+    int texAttrib = glGetAttribLocation(program, "texCoord");
+    glEnableVertexAttribArray(texAttrib);
+    glVertexAttribPointer(texAttrib, 2, GL_FLOAT, GL_FALSE, 7 * sizeof(float), (void*)(5 * sizeof(float)));
+
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    unsigned int texture;
+    glGenTextures(1, &texture);
+    glBindTexture(GL_TEXTURE_2D, texture);
+
+    lens::Texture tex = lens::TextureLoader::LoadPNG("data/lizard.png");
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width, tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.data);
+
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -127,6 +168,8 @@ void main()
     ImGui_ImplOpenGL3_Shutdown();
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
+    glDeleteTextures(1, &texture);
+    lens::TextureLoader::UnloadTexture(&tex);
     glDeleteProgram(program);
     glDeleteBuffers(1, &buffer);
     glDeleteVertexArrays(1, &vao);
