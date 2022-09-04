@@ -121,13 +121,18 @@ void main()
     glGenTextures(1, &texture);
     glBindTexture(GL_TEXTURE_2D, texture);
 
-    lens::Texture tex = lens::TextureLoader::LoadPNG("data/lizard.png");
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width, tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.data);
+//    lens::Texture tex = lens::TextureLoader::LoadPNG("data/lizard.png");
+//    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, tex.width, tex.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, tex.data);
+    unsigned char testTexture[] = {
+            255, 0, 0, 255, 0, 255, 0, 255,
+            0, 0, 255, 255, 255, 255, 0, 255,
+    };
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 2, 2, 0, GL_RGBA, GL_UNSIGNED_BYTE, testTexture);
 
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
@@ -169,7 +174,7 @@ void main()
     ImGui_ImplSDL2_Shutdown();
     ImGui::DestroyContext();
     glDeleteTextures(1, &texture);
-    lens::TextureLoader::UnloadTexture(&tex);
+//    lens::TextureLoader::UnloadTexture(&tex);
     glDeleteProgram(program);
     glDeleteBuffers(1, &buffer);
     glDeleteVertexArrays(1, &vao);
