@@ -6,6 +6,7 @@ set(CMAKE_CXX_STANDARD 14)
 add_subdirectory(external/SDL)
 add_subdirectory(external/glad)
 add_subdirectory(external/imgui-cmake)
+add_subdirectory(external/glm)
 
 file(GLOB_RECURSE SOURCES src/*.cpp)
 
@@ -19,6 +20,6 @@ else()
     set(SDL2_LIBS SDL2)
 endif()
 
-target_link_libraries(lens PRIVATE ${SDL2_LIBS} ${CMAKE_DL_LIBS} Glad ImGui)
+target_link_libraries(lens PRIVATE ${SDL2_LIBS} ${CMAKE_DL_LIBS} Glad ImGui glm)
 
 file(COPY data/ DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/data/)

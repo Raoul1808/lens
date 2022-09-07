@@ -5,6 +5,15 @@
 #include "imgui/imgui_impl_opengl3.h"
 #include "texture.hpp"
 #include "util/texture_loader.hpp"
+#include "glm/glm.hpp"
+#include "glm/gtc/matrix_transform.hpp"
+#include "glm/gtc/type_ptr.hpp"
+#include "camera.hpp"
+
+const int WINDOW_WIDTH = 1280;
+const int WINDOW_HEIGHT = 720;
+const float HALF_WIDTH = WINDOW_WIDTH / 2.0f;
+const float HALF_HEIGHT = WINDOW_HEIGHT / 2.0f;
 
 int main(int argc, char** argv)
 {
@@ -16,7 +25,10 @@ int main(int argc, char** argv)
     SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
     SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 
-    SDL_Window* window = SDL_CreateWindow("lens", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, 1280, 720, SDL_WINDOW_OPENGL);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLEBUFFERS, 1);
+    SDL_GL_SetAttribute(SDL_GL_MULTISAMPLESAMPLES, 2);
+
+    SDL_Window* window = SDL_CreateWindow("lens", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, SDL_WINDOW_OPENGL);
     SDL_GLContext glContext = SDL_GL_CreateContext(window);
 
     if (!gladLoadGLLoader(SDL_GL_GetProcAddress))
@@ -30,10 +42,10 @@ int main(int argc, char** argv)
 
 
     float vertices[] = {
-            -0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
-            0.5f, 0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
-            0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
-            -0.5f, -0.5f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
+            -50.0f, 50.0f, 1.0f, 1.0f, 1.0f, 0.0f, 0.0f,
+            50.0f, 50.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f,
+            50.0f, -50.0f, 1.0f, 1.0f, 1.0f, 1.0f, 1.0f,
+            -50.0f, -50.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f,
     };
 
     unsigned int elements[] = {
@@ -63,11 +75,13 @@ in vec2 texCoord;
 out vec3 a_Color;
 out vec2 a_TexCoord;
 
+uniform mat4 projection;
+
 void main()
 {
     a_Color = color;
     a_TexCoord = texCoord;
-    gl_Position = vec4(position, 0.0, 1.0);
+    gl_Position = projection * vec4(position, 1.0, 1.0);
 }
     )glsl";
 
@@ -143,6 +157,9 @@ void main()
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
+    lens::Camera::Initialize(HALF_WIDTH, HALF_HEIGHT);
+    int projLoc = glGetUniformLocation(program, "projection");
+
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();
     ImGui::GetIO().ConfigFlags |= ImGuiConfigFlags_DockingEnable;
@@ -161,7 +178,26 @@ void main()
                 running = false;
                 break;
             }
+
+            if (ev.type == SDL_KEYDOWN)
+            {
+                printf("Key down!\n");
+                if (ev.key.keysym.sym == SDLK_UP)
+                {
+                    printf("Up\n");
+                    lens::Camera::Zoom(1.50f);
+                }
+                if (ev.key.keysym.sym == SDLK_DOWN)
+                {
+                    printf("Down\n");
+                    lens::Camera::Zoom(0.75f);
+                }
+            }
         }
+
+        lens::Camera::UpdateCameraMatrix();
+
+        glUniformMatrix4fv(projLoc, 1, GL_FALSE, glm::value_ptr(lens::Camera::GetCameraMatrix()));
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL2_NewFrame();
@@ -170,6 +206,7 @@ void main()
         ImGui::Begin("Test Image");
         ImGui::Image((void*)(intptr_t)lizardImg, ImVec2(tex.width, tex.height));
         ImGui::End();
+        lens::Camera::CameraImGui();
         ImGui::Render();
 
         glClearColor(0.390625f, 0.58203125f, 0.92578125f, 1.0f);
